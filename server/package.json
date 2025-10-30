@@ -4,8 +4,9 @@
   "description": "Backend server for Smart Parking Locator",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "npm run start:backend",
+    "start:backend": "cd backend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "keywords": ["parking", "socket.io", "express", "mongodb"],
   "author": "",
