@@ -1,0 +1,30 @@
+<div class="app-container" *ngIf="authService.isLoggedIn()">
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h1>🅿️ Smart Parking</h1>
+    </div>
+    
+    <div class="nav-links">
+      <a routerLink="/parking-list" routerLinkActive="active">📋 Parking List</a>
+      <a routerLink="/admin-panel" routerLinkActive="active" *ngIf="authService.isAdmin()">🔧 Admin Panel</a>
+    </div>
+
+    <div class="nav-user">
+      <span class="user-info">
+        👤 {{ (authService.currentUser$ | async)?.username }}
+        <span class="role-badge" [class.admin]="authService.isAdmin()">
+          {{ authService.isAdmin() ? 'Admin' : 'User' }}
+        </span>
+      </span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<div *ngIf="!authService.isLoggedIn()">
+  <router-outlet></router-outlet>
+</div>

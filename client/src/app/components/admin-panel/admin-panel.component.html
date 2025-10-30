@@ -1,0 +1,182 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <h2>🔧 Admin Panel</h2>
+    <button class="btn btn-success" (click)="showCreateForm = !showCreateForm" *ngIf="authService.isAdmin()">
+      {{ showCreateForm ? '✕ Cancel' : '+ New Parking Area' }}
+    </button>
+  </div>
+
+  <!-- Create Parking Form -->
+  <div class="create-form-container" *ngIf="showCreateForm && authService.isAdmin()">
+    <h3>Create New Parking Area</h3>
+    <form [formGroup]="createForm" (ngSubmit)="createParking()">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" formControlName="name" placeholder="Downtown Parking">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" formControlName="address" placeholder="123 Main St">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="number" step="0.000001" formControlName="lat" placeholder="40.7128">
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="number" step="0.000001" formControlName="lng" placeholder="-74.0060">
+        </div>
+        <div class="form-group">
+          <label>Total Slots</label>
+          <input type="number" formControlName="totalSlots" placeholder="50">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid">
+        Create Parking Area
+      </button>
+    </form>
+  </div>
+
+  <!-- Overall Statistics -->
+  <div class="stats-container" *ngIf="overallStats">
+    <h3>📊 Overall Statistics</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ overallStats.totalParkingAreas }}</div>
+        <div class="stat-label">Total Areas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ overallStats.totalSlots }}</div>
+        <div class="stat-label">Total Slots</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-value">{{ overallStats.totalAvailable }}</div>
+        <div class="stat-label">Available</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-value">{{ overallStats.totalOccupied }}</div>
+        <div class="stat-label">Occupied</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Parking Areas List -->
+  <div class="parking-areas-section">
+    <h3>Parking Areas</h3>
+    
+    <div *ngIf="loading" class="loading">Loading...</div>
+
+    <div class="parking-areas-grid">
+      <div 
+        *ngFor="let parking of parkingAreas" 
+        class="parking-area-card"
+        [class.selected]="selectedParking?._id === parking._id"
+        (click)="selectParking(parking)">
+        
+        <div class="card-header">
+          <h4>{{ parking.name }}</h4>
+          <span class="availability-badge" 
+                [class.available]="(parking.availableSlots || 0) > 0"
+                [class.full]="(parking.availableSlots || 0) === 0">
+            {{ parking.availableSlots }} / {{ parking.totalSlots }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <p class="address">{{ parking.address }}</p>
+          
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="label">Occupied:</span>
+              <span class="value">{{ parking.totalSlots - (parking.availableSlots || 0) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Rate:</span>
+              <span class="value">{{ ((parking.totalSlots - (parking.availableSlots || 0)) / parking.totalSlots * 100).toFixed(0) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slot Management Section -->
+  <div class="slot-management" *ngIf="selectedParking && authService.isAdmin()">
+    <h3>Manage Slots - {{ selectedParking.name }}</h3>
+
+    <!-- Quick Update Form -->
+    <div class="quick-update-form">
+      <form [formGroup]="updateForm" (ngSubmit)="updateSlot()">
+        <div class="form-inline">
+          <label>Slot Number:</label>
+          <input type="number" formControlName="slotNumber" placeholder="1" min="1">
+          
+          <label>Status:</label>
+          <select formControlName="isAvailable">
+            <option [value]="true">Available</option>
+            <option [value]="false">Occupied</option>
+          </select>
+          
+          <button type="submit" class="btn btn-primary" [disabled]="!updateForm.valid">
+            Update Slot
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Slots Grid -->
+    <div class="slots-grid-container">
+      <div class="slots-grid">
+        <div 
+          *ngFor="let slot of selectedParking.slots" 
+          class="slot-item"
+          [ngClass]="getSlotClass(slot)"
+          (click)="toggleSlotStatus(selectedParking, slot)"
+          [title]="'Click to toggle slot ' + slot.slotNumber">
+          <div class="slot-number">{{ slot.slotNumber }}</div>
+          <div class="slot-status">{{ slot.isAvailable ? '✓' : '✕' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Occupancy Stats Table -->
+  <div class="occupancy-stats-section" *ngIf="occupancyStats.length > 0">
+    <h3>📈 Occupancy Statistics</h3>
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Parking Area</th>
+          <th>Total Slots</th>
+          <th>Available</th>
+          <th>Occupied</th>
+          <th>Occupancy Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stat of occupancyStats">
+          <td>{{ stat.name }}</td>
+          <td>{{ stat.totalSlots }}</td>
+          <td class="available">{{ stat.availableSlots }}</td>
+          <td class="occupied">{{ stat.occupiedSlots }}</td>
+          <td>
+            <div class="progress-bar">
+              <div class="progress-fill" 
+                   [style.width.%]="stat.occupancyRate"
+                   [class.low]="stat.occupancyRate < '50'"
+                   [class.medium]="stat.occupancyRate >= '50' && stat.occupancyRate < '80'"
+                   [class.high]="stat.occupancyRate >= '80'">
+              </div>
+              <span class="progress-text">{{ stat.occupancyRate }}%</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

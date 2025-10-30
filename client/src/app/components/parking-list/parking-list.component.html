@@ -1,0 +1,107 @@
+<div class="parking-list-container">
+  <h2>🅿️ Available Parking Areas in Hyderabad</h2>
+
+  <!-- Active Session Banner -->
+  <div *ngIf="activeSession" class="active-session-banner">
+    <div class="session-info">
+      <h3>🚗 Currently Parked</h3>
+      <p><strong>{{ activeSession.parkingArea.name }}</strong></p>
+      <p>Slot #{{ activeSession.slotNumber }}</p>
+      <p>Entry: {{ formatDate(activeSession.entryTime) }}</p>
+      <p>Duration: {{ getActiveDuration() }}</p>
+    </div>
+    <button class="exit-btn" (click)="exitParking()">🚪 Exit Parking</button>
+  </div>
+
+  <!-- View History Button -->
+  <button class="history-btn" (click)="viewHistory()">
+    {{ showHistory ? '🅿️ Show Parking Areas' : '📜 View History' }}
+  </button>
+
+  <!-- Parking History -->
+  <div *ngIf="showHistory" class="history-container">
+    <h3>📜 Parking History</h3>
+    <div *ngIf="parkingHistory.length === 0" class="no-data">
+      <p>No parking history found.</p>
+    </div>
+    <div *ngFor="let session of parkingHistory" class="history-card">
+      <h4>{{ session.parkingArea.name }}</h4>
+      <p>Slot: #{{ session.slotNumber }}</p>
+      <p>Entry: {{ formatDate(session.entryTime) }}</p>
+      <p>Exit: {{ formatDate(session.exitTime) }}</p>
+      <p><strong>Duration: {{ formatDuration(session.duration) }}</strong></p>
+      <span class="status-badge" [class.completed]="session.status === 'completed'">
+        {{ session.status }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading parking areas...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    {{ error }}
+  </div>
+
+  <!-- Parking Areas Grid -->
+  <div *ngIf="!loading && !error && !showHistory" class="parking-grid">
+    <div *ngFor="let parking of parkingAreas" class="parking-card">
+      <div class="card-header">
+        <h3>{{ parking.name }}</h3>
+        <span class="badge" [class.available]="(parking.availableSlots || 0) > 0">
+          {{ parking.availableSlots || 0 }} / {{ parking.totalSlots }} available
+        </span>
+      </div>
+
+      <div class="card-body">
+        <p class="address">📍 {{ parking.address }}</p>
+        <p class="distance" *ngIf="parking.distance !== undefined">
+          🚗 {{ parking.distance.toFixed(2) }} km away
+        </p>
+        
+        <div class="occupancy-bar">
+          <div 
+            class="occupancy-fill" 
+            [ngClass]="getOccupancyClass(getOccupancyPercentage(parking))"
+            [style.width.%]="getOccupancyPercentage(parking)">
+          </div>
+        </div>
+        <p class="occupancy-text">
+          {{ getOccupancyPercentage(parking).toFixed(0) }}% occupied
+        </p>
+
+        <div class="slots-preview">
+          <div 
+            *ngFor="let slot of parking.slots.slice(0, 10)" 
+            class="slot-indicator"
+            [class.available]="slot.isAvailable"
+            [class.occupied]="!slot.isAvailable"
+            [title]="'Slot ' + slot.slotNumber + ': ' + (slot.isAvailable ? 'Available' : 'Occupied')">
+            {{ slot.slotNumber }}
+          </div>
+          <span *ngIf="parking.slots.length > 10" class="more-slots">
+            +{{ parking.slots.length - 10 }} more
+          </span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button 
+          class="enter-btn" 
+          (click)="enterParking(parking)"
+          [disabled]="activeSession !== null || (parking.availableSlots || 0) === 0">
+          {{ activeSession ? '🔒 Already Parked' : (parking.availableSlots || 0) === 0 ? '🚫 Full' : '🅿️ Enter Parking' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data State -->
+  <div *ngIf="!loading && parkingAreas.length === 0 && !showHistory" class="no-data">
+    <p>No parking areas available at the moment.</p>
+  </div>
+</div>

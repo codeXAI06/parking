@@ -1,0 +1,70 @@
+<div class="map-container">
+  <div class="map-header">
+    <h2>🗺️ Parking Map</h2>
+    <button class="btn btn-primary" (click)="findNearestParking()">
+      📍 Find Nearest
+    </button>
+  </div>
+
+  <div class="map-wrapper">
+    <div id="map"></div>
+    
+    <div class="sidebar" *ngIf="selectedParking">
+      <div class="sidebar-header">
+        <h3>{{ selectedParking.name }}</h3>
+        <button class="close-btn" (click)="selectedParking = null">×</button>
+      </div>
+      
+      <div class="sidebar-content">
+        <div class="info-item">
+          <strong>📍 Address:</strong>
+          <p>{{ selectedParking.address }}</p>
+        </div>
+        
+        <div class="info-item">
+          <strong>🅿️ Availability:</strong>
+          <div class="availability-badge" 
+               [class.available]="(selectedParking.availableSlots || 0) > 10"
+               [class.limited]="(selectedParking.availableSlots || 0) <= 10 && (selectedParking.availableSlots || 0) > 0"
+               [class.full]="(selectedParking.availableSlots || 0) === 0">
+            {{ selectedParking.availableSlots }} / {{ selectedParking.totalSlots }} slots
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="selectedParking.distance !== undefined">
+          <strong>🚗 Distance:</strong>
+          <p>{{ selectedParking.distance }} km away</p>
+        </div>
+
+        <div class="info-item">
+          <strong>Parking Slots:</strong>
+          <div class="slots-grid">
+            <div 
+              *ngFor="let slot of selectedParking.slots" 
+              class="slot-box"
+              [class.available]="slot.isAvailable"
+              [class.occupied]="!slot.isAvailable"
+              [title]="'Slot ' + slot.slotNumber">
+              {{ slot.slotNumber }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-icon available"></div>
+      <span>Available (>30%)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-icon limited"></div>
+      <span>Limited (1-30%)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-icon full"></div>
+      <span>Full</span>
+    </div>
+  </div>
+</div>
